@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Audio Player</title>
+    <style>
+        .player-container {
+            font-family: sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-top: 15px;
+        }
+        button {
+            padding: 10px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .seek-bar {
+            width: 100%;
+            margin-top: 15px;
+        }
+    </style>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="player-container">
+    <h3 id="playerTitle">audio id</h3>
+    <!-- 音声ファイルのパスはここで指定 -->
+    <audio id="myAudio" src="/music/Blue_Star.mp3"></audio>
+
+    <div>
+        <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+    </div>
+
+    <input type="range" id="seekBar" class="seek-bar" value="0" step="1">
+
+    <div class="controls">
+        <button onclick="skip(-10)">-10s</button>
+        <button onclick="togglePlay()" id="playBtn">再生</button>
+        <button onclick="stopAudio()">停止</button>
+        <button onclick="skip(10)">+10s</button>
+    </div>
+</div>
+
+<script>
+    const audio = document.getElementById('myAudio');
+    const playBtn = document.getElementById('playBtn');
+    const seekBar = document.getElementById('seekBar');
+    const currentTimeText = document.getElementById('currentTime');
+    const durationText = document.getElementById('duration');
+
+    // ページの読み込み時にURLからファイル名を取得して設定する
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const filename = urlParams.get('file');
+        const error = urlParams.get('error');
+
+        if (error === 'FileTooLarge') {
+            alert("ファイルサイズが大きすぎます。10MB以下のファイルを選択してください。");
+        }
+
+        if (filename) {
+            const playerTitle = document.getElementById('playerTitle');
+
+            // <h3> タグのテキストをデコードしたファイル名に更新
+            playerTitle.textContent = decodeURIComponent(filename);
+
+            // <audio> タグのソースを設定 (ファイルは playlist フォルダにあると仮定)
+            audio.src = `/playlist/${encodeURIComponent(filename)}`;
+            audio.load(); // 音声ファイルを読み込む
+        }
+    });
+
+    // 再生・一時停止の切り替え
+    function togglePlay() {
+        if (audio.paused) {
+            audio.play();
+            playBtn.textContent = '一時停止';
+        } else {
+            audio.pause();
+            playBtn.textContent = '再生';
+        }
+    }
+
+    // 停止（最初に戻る）
+    function stopAudio() {
+        audio.pause();
+        audio.currentTime = 0;
+        playBtn.textContent = '再生';
+    }
+
+    // スキップ機能
+    function skip(time) {
+        audio.currentTime += time;
+    }
+
+    // 再生時間の更新に合わせてバーと数字を動かす
+    audio.addEventListener('timeupdate', () => {
+        const current = Math.floor(audio.currentTime);
+        seekBar.value = current;
+        currentTimeText.textContent = formatTime(current);
+    });
+
+    // メタデータ読み込み完了時にバーの最大値を設定
+    audio.addEventListener('loadedmetadata', () => {
+        seekBar.max = Math.floor(audio.duration);
+        durationText.textContent = formatTime(audio.duration);
+    });
+
+    // シークバーを動かした時に再生位置を変える
+    seekBar.addEventListener('input', () => {
+        audio.currentTime = seekBar.value;
+    });
+
+    // 時間の表示形式を整える (例: 75秒 -> 1:15)
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return m + ":" + (s < 10 ? "0" + s : s);
+    }
+
+    function showAssociatedNumber() {
+        // 現在のファイル名を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const filename = urlParams.get('file');
+
+        if (!filename) {
+            alert("ファイルが見つかりません。URLにファイル名を指定してください。");
+            return;
+        }
+
+        // サーバーに数値を問い合わせる
+        fetch(`/api/get_number?file=${encodeURIComponent(filename)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`数値が見つかりません (Status: ${response.status})`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(`このファイルに紐付けられた数値は: ${data.number}`);
+            })
+            .catch(error => {
+                console.error('Error fetching number:', error);
+                alert("数値の取得中にエラーが発生しました。");
+            });
+    }
+</script>
+<!-- ここに戻るボタンを追加 -->
+<div class ="button-container">
+    <a href="/main.html" class="my-button">Back to Main</a>
+</div>
+<!-- ボタンを押したら数値を提示 -->
+<div class ="button-container">
+    <button class="my-button" onclick="showAssociatedNumber()">紐付けられた数値を表示</button>
+</div>
+
+<!-- アップロードフォーム -->
+<div class="player-container" style="margin-top: 20px;">
+    <h4>Upload New Track</h4>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="audio/*" required multiple>
+        <div style="margin-top: 10px;">
+            <button type="submit">Upload</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

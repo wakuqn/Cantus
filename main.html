@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cantus test mode</title>     
+
+    <link rel="stylesheet" href="style.css">    
+
+</head> 
+<body>
+    <div class="container">
+        <h1>Cantus</h1>
+        <p>This is a test mode for Cantus, a music composition software.</p>
+    </div>
+    <div class="button-container">
+        <a href="/playlist/test_playLiSt.html" class="my-button">Play</a>
+    </div>
+
+    <div class="container">
+        <h2>Saved Files</h2>
+        <ul id="file-list">
+            <!-- データベースから読み込んだファイル名がここに表示されます -->
+        </ul>
+    </div>
+
+    <script>
+        // ページの読み込みが完了したら実行
+        document.addEventListener('DOMContentLoaded', function() {
+            // サーバーにファイル名の一覧を問い合わせる
+            fetch('/api/playlists')
+                .then(response => response.json())
+                .then(data => {
+                    const fileList = document.getElementById('file-list');
+                    data.forEach(filename => {
+                        const li = document.createElement('li');
+                        const a = document.createElement('a');
+                        a.textContent = filename;
+                        // ファイル名をURLパラメータとして渡すリンクを作成
+                        a.href = `/playlist/test_playLiSt.html?file=${encodeURIComponent(filename)}`;
+                        li.appendChild(a);
+                        fileList.appendChild(li);
+                    });
+
+                    // ランダム再生ボタンの設定
+                    const randomBtn = document.getElementById('random-play-btn');
+                    if (data.length > 0) {
+                        // リストの中からランダムに1つ選ぶ
+                        const randomFile = data[Math.floor(Math.random() * data.length)];
+                        // 選んだファイルのリンクをボタンに設定
+                        randomBtn.href = `/playlist/test_playLiSt.html?file=${encodeURIComponent(randomFile)}`;
+                    } else {
+                        // データがない場合はボタンを隠すなどの処理（今回はテキスト変更）
+                        randomBtn.textContent = "No Files Available";
+                        randomBtn.style.backgroundColor = "#ccc";
+                    }
+                })
+                .catch(error => console.error('Error fetching files:', error));
+        });
+    </script>
+</body>
+</html>
