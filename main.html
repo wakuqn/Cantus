@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cantus test mode</title>     
+    <title>Cantus test mode</title>
 
-    <link rel="stylesheet" href="style.css">    
+    <link rel="stylesheet" href="style.css">
 
-</head> 
+</head>
+
 <body>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+
     <div class="container">
         <h1>Cantus</h1>
         <p>This is a test mode for Cantus, a music composition software.</p>
@@ -43,7 +62,7 @@
         let availablePlaylists = [];
 
         // ページの読み込みが完了したら実行
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             loadPlaylists();
             loadFiles();
         });
@@ -86,7 +105,7 @@
 
                     data.forEach(filename => {
                         const li = document.createElement('li');
-                        
+
                         // 曲名リンク
                         const a = document.createElement('a');
                         a.textContent = filename;
@@ -115,14 +134,14 @@
 
             fetch('/api/create_playlist', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name: name})
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
             })
-            .then(res => res.json())
-            .then(data => {
-                // 作成成功したら、そのプレイリスト画面(プレイヤー画面)へ移動
-                window.location.href = `/playlist/test_playLiSt.html?playlist_id=${data.id}&playlist_name=${encodeURIComponent(data.name)}`;
-            });
+                .then(res => res.json())
+                .then(data => {
+                    // 作成成功したら、そのプレイリスト画面(プレイヤー画面)へ移動
+                    window.location.href = `/playlist/test_playLiSt.html?playlist_id=${data.id}&playlist_name=${encodeURIComponent(data.name)}`;
+                });
         }
 
         function addToPlaylistPrompt(filename) {
@@ -133,18 +152,19 @@
 
             let msg = "Enter Playlist ID to add to:\n";
             availablePlaylists.forEach(pl => msg += `${pl.id}: ${pl.name}\n`);
-            
+
             const playlistId = prompt(msg);
-             if (playlistId) {
+            if (playlistId) {
                 fetch('/api/add_to_playlist', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({playlist_id: playlistId, filename: filename})
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ playlist_id: playlistId, filename: filename })
                 })
-                .then(res => res.json())
-                .then(() => alert('Added to playlist!'));
+                    .then(res => res.json())
+                    .then(() => alert('Added to playlist!'));
             }
         }
     </script>
 </body>
+
 </html>
