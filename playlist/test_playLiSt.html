@@ -17,6 +17,7 @@
 
         body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -38,13 +39,26 @@
             width: 100%;
             margin-top: 15px;
         }
+
+        .volume-control {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .volume-slider {
+            width: 100px;
+            cursor: pointer;
+        }
     </style>
     <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
 
-    <div class="player-container">
+    <div class="player-container" style="margin-top: 20px;">
         <h3 id="playerTitle">audio id</h3>
         <!-- 音声ファイルのパスはここで指定 -->
         <audio id="myAudio" src="/music/Blue_Star.mp3"></audio>
@@ -61,174 +75,41 @@
             <button onclick="stopAudio()">停止</button>
             <button onclick="skip(10)">+10s</button>
         </div>
+
+        <!-- ボリュームコントロール -->
+        <div class="volume-control">
+            <label for="volumeBar" style="font-size: 0.9em;">音量:</label>
+            <input type="range" id="volumeBar" class="volume-slider" min="0" max="1" step="0.01" value="0.5">
+            <span id="volumeText" style="font-size: 0.9em; min-width: 40px;">50%</span>
+        </div>
     </div>
 
-    <script>
-        const audio = document.getElementById('myAudio');
-        const playBtn = document.getElementById('playBtn');
-        const seekBar = document.getElementById('seekBar');
-        const currentTimeText = document.getElementById('currentTime');
-        const durationText = document.getElementById('duration');
+    <!-- 外部スクリプトの読み込み -->
+    <script src="playlist.js"></script>
+    <script src="volume.js"></script>
 
-        // ページの読み込み時にURLからファイル名を取得して設定する
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const filename = urlParams.get('file');
-            const error = urlParams.get('error');
-            const playlistName = urlParams.get('playlist_name');
-            const playlistId = urlParams.get('playlist_id');
-
-            if (error === 'FileTooLarge') {
-                alert("ファイルサイズが大きすぎます。10MB以下のファイルを選択してください。");
-            }
-
-            if (filename) {
-                playTrack(filename, false); // 初期表示時は自動再生しない
-            } else if (playlistName) {
-                // ファイル名がない場合でも、プレイリスト名があればタイトルに設定
-                const playerTitle = document.getElementById('playerTitle');
-                playerTitle.textContent = decodeURIComponent(playlistName);
-            }
-
-            // プレイリストIDがある場合は曲リストを表示
-            if (playlistId) {
-                loadPlaylistSongs(playlistId);
-            }
-        });
-
-        // 再生・一時停止の切り替え
-        function togglePlay() {
-            if (audio.paused) {
-                audio.play();
-                playBtn.textContent = '一時停止';
-            } else {
-                audio.pause();
-                playBtn.textContent = '再生';
-            }
-        }
-
-        // 停止（最初に戻る）
-        function stopAudio() {
-            audio.pause();
-            audio.currentTime = 0;
-            playBtn.textContent = '再生';
-        }
-
-        // 指定した曲を再生する関数
-        function playTrack(filename, autoPlay = true) {
-            const playerTitle = document.getElementById('playerTitle');
-            playerTitle.textContent = decodeURIComponent(filename);
-
-            audio.src = `/playlist/${encodeURIComponent(filename)}`;
-            audio.load();
-
-            if (autoPlay) {
-                audio.play().catch(e => console.log("Playback prevented:", e));
-                playBtn.textContent = '一時停止';
-            }
-        }
-
-        // プレイリストの曲一覧を読み込んで表示
-        function loadPlaylistSongs(id) {
-            const container = document.getElementById('playlistContainer');
-            const list = document.getElementById('playlistSongs');
-            container.style.display = 'block';
-
-            fetch(`/api/get_playlist_songs?id=${id}`)
-                .then(res => res.json())
-                .then(songs => {
-                    list.innerHTML = '';
-                    songs.forEach(song => {
-                        const li = document.createElement('li');
-                        li.textContent = song;
-                        li.style.padding = '10px';
-                        li.style.borderBottom = '1px solid #ddd';
-                        li.style.cursor = 'pointer';
-                        li.onmouseover = () => li.style.backgroundColor = '#e0e0e0';
-                        li.onmouseout = () => li.style.backgroundColor = 'transparent';
-                        li.onclick = () => playTrack(song);
-                        list.appendChild(li);
-                    });
-                });
-        }
-
-        // スキップ機能
-        function skip(time) {
-            audio.currentTime += time;
-        }
-
-        // 再生時間の更新に合わせてバーと数字を動かす
-        audio.addEventListener('timeupdate', () => {
-            const current = Math.floor(audio.currentTime);
-            seekBar.value = current;
-            currentTimeText.textContent = formatTime(current);
-        });
-
-        // メタデータ読み込み完了時にバーの最大値を設定
-        audio.addEventListener('loadedmetadata', () => {
-            seekBar.max = Math.floor(audio.duration);
-            durationText.textContent = formatTime(audio.duration);
-        });
-
-        // シークバーを動かした時に再生位置を変える
-        seekBar.addEventListener('input', () => {
-            audio.currentTime = seekBar.value;
-        });
-
-        // 時間の表示形式を整える (例: 75秒 -> 1:15)
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return m + ":" + (s < 10 ? "0" + s : s);
-        }
-
-        function showAssociatedNumber() {
-            // 現在のファイル名を取得
-            const urlParams = new URLSearchParams(window.location.search);
-            const filename = urlParams.get('file');
-
-            if (!filename) {
-                alert("ファイルが見つかりません。");
-                return;
-            }
-
-            // データベース(SQL/playlist.db)から数値を取得するAPIを呼び出す
-            // 注: サーバー側でこのAPIエンドポイント(/api/get_number)の実装が必要です
-            fetch(`/api/get_number?file=${encodeURIComponent(filename)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`数値が見つかりません (Status: ${response.status})`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(`このファイルに紐付けられた数値は: ${data.number}`);
-                })
-                .catch(error => {
-                    console.error('Error fetching number:', error);
-                    alert("数値の取得中にエラーが発生しました。");
-                });
-        }
-    </script>
     <!-- ここに戻るボタンを追加 -->
-    <div class="button-container">
-        <a href="/main.html" class="my-button">Back to Main</a>
+    <div class="button-container" style="margin-top: 15px;">
+        <a href="/main.html" class="my-button"
+            style="text-decoration: none; background: #007bff; color: #fff; padding: 10px 15px; border-radius: 5px; display: inline-block;">Back
+            to Main</a>
     </div>
 
     <!-- プレイリスト曲一覧エリア -->
     <div class="player-container" id="playlistContainer" style="margin-top: 20px; display: none;">
-        <h4>Playlist Songs</h4>
+        <h4 id="queueTitle">Queue</h4>
         <ul id="playlistSongs" style="list-style: none; padding: 0; text-align: left;">
         </ul>
     </div>
 
     <!-- アップロードフォーム -->
-    <div class="player-container" style="margin-top: 20px;">
+    <div class="player-container" style="margin-top: 20px; margin-bottom: 30px;">
         <h4>Upload New Track</h4>
         <form action="/upload" method="post" enctype="multipart/form-data">
             <input type="file" name="file" accept="audio/*" required multiple>
             <div style="margin-top: 10px;">
-                <button type="submit">Upload</button>
+                <button type="submit"
+                    style="background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Upload</button>
             </div>
         </form>
     </div>

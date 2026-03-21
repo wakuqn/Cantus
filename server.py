@@ -42,6 +42,8 @@ def init_db():
     cursor.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT, provider_user_id TEXT, name TEXT)')
     # セッション管理テーブル
     cursor.execute('CREATE TABLE IF NOT EXISTS sessions (session_id TEXT PRIMARY KEY, user_id INTEGER)')
+    # numbersテーブル (アップロード時の乱数保存用)
+    cursor.execute('CREATE TABLE IF NOT EXISTS numbers (id INTEGER PRIMARY KEY AUTOINCREMENT, filename TEXT, integer_val INTEGER)')
     conn.commit()
     conn.close()
 
@@ -85,34 +87,54 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404, "Not Found")
 
     def handle_upload(self):
-        # ファイルサイズ制限 (10MB)
+        # ファイルサイズ制限 (50MB)
         content_length = int(self.headers.get('Content-Length', 0))
-        if content_length > 10 * 1024 * 1024:
+        if content_length > 50 * 1024 * 1024:
             self.send_response(303)
             self.send_header('Location', '/playlist/test_playLiSt.html?error=FileTooLarge')
             self.end_headers()
             return
 
-       # multipart/form-dataの解析
-        fileitem = form['file']
+        import cgi
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={'REQUEST_METHOD': 'POST',
+                     'CONTENT_TYPE': self.headers['Content-Type'],
+                     }
+        )
         
-        if fileitem.filename:
-            # ファイル名を安全に取得 (パスを除去)
-            filename = os.path.basename(fileitem.filename)
-            save_path = os.path.join('playlist', filename)
+        if 'file' not in form:
+            self.send_error(400, "No file uploaded")
+            return
             
-            # 1. ファイルを保存
-            os.makedirs('playlist', exist_ok=True) # フォルダがなければ作成
-            with open(save_path, 'wb') as f:
-                f.write(fileitem.file.read())
+        fileitems = form['file']
+        # multiple属性で複数ファイルが送られた場合はリストになるので統一
+        if not isinstance(fileitems, list):
+            fileitems = [fileitems]
 
-            # 2. データベースに登録 (list.pyと同様のロジック)
-            self.register_to_db(filename)
+        last_filename = None
+        os.makedirs('music', exist_ok=True)
+        
+        for fileitem in fileitems:
+            if fileitem.filename:
+                # ファイル名を安全に取得 (パスを除去)
+                filename = os.path.basename(fileitem.filename)
+                save_path = os.path.join('music', filename)
+                
+                # ファイルを保存
+                with open(save_path, 'wb') as f:
+                    f.write(fileitem.file.read())
 
-            # 3. アップロードした曲のプレイヤー画面へリダイレクト
-            self.send_response(303) # See Other
-            # 日本語ファイル名に対応するためURLエンコードを行う
-            self.send_header('Location', f'/playlist/test_playLiSt.html?file={quote(filename)}')
+                # データベースに登録
+                self.register_to_db(filename)
+                last_filename = filename
+                print(f"[Upload] Saved: {filename}")
+
+        if last_filename:
+            self.send_response(303)
+            # 最後にアップロードされた曲のプレイヤー画面へリダイレクト
+            self.send_header('Location', f'/playlist/test_playLiSt.html?file={quote(last_filename)}')
             self.end_headers()
         else:
             self.send_error(400, "Invalid file")
