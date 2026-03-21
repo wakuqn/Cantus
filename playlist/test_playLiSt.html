@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Simple Audio Player</title>
+    <title>Cantus player1</title>
     <style>
         .player-container {
             font-family: sans-serif;
@@ -61,20 +61,24 @@
         const urlParams = new URLSearchParams(window.location.search);
         const filename = urlParams.get('file');
         const error = urlParams.get('error');
+        const playlistName = urlParams.get('playlist_name');
+        const playlistId = urlParams.get('playlist_id');
 
         if (error === 'FileTooLarge') {
             alert("ファイルサイズが大きすぎます。10MB以下のファイルを選択してください。");
         }
 
         if (filename) {
+            playTrack(filename, false); // 初期表示時は自動再生しない
+        } else if (playlistName) {
+            // ファイル名がない場合でも、プレイリスト名があればタイトルに設定
             const playerTitle = document.getElementById('playerTitle');
+            playerTitle.textContent = decodeURIComponent(playlistName);
+        }
 
-            // <h3> タグのテキストをデコードしたファイル名に更新
-            playerTitle.textContent = decodeURIComponent(filename);
-
-            // <audio> タグのソースを設定 (ファイルは playlist フォルダにあると仮定)
-            audio.src = `/playlist/${encodeURIComponent(filename)}`;
-            audio.load(); // 音声ファイルを読み込む
+        // プレイリストIDがある場合は曲リストを表示
+        if (playlistId) {
+            loadPlaylistSongs(playlistId);
         }
     });
 
@@ -94,6 +98,44 @@
         audio.pause();
         audio.currentTime = 0;
         playBtn.textContent = '再生';
+    }
+
+    // 指定した曲を再生する関数
+    function playTrack(filename, autoPlay = true) {
+        const playerTitle = document.getElementById('playerTitle');
+        playerTitle.textContent = decodeURIComponent(filename);
+        
+        audio.src = `/playlist/${encodeURIComponent(filename)}`;
+        audio.load();
+
+        if (autoPlay) {
+            audio.play().catch(e => console.log("Playback prevented:", e));
+            playBtn.textContent = '一時停止';
+        }
+    }
+
+    // プレイリストの曲一覧を読み込んで表示
+    function loadPlaylistSongs(id) {
+        const container = document.getElementById('playlistContainer');
+        const list = document.getElementById('playlistSongs');
+        container.style.display = 'block';
+
+        fetch(`/api/get_playlist_songs?id=${id}`)
+            .then(res => res.json())
+            .then(songs => {
+                list.innerHTML = '';
+                songs.forEach(song => {
+                    const li = document.createElement('li');
+                    li.textContent = song;
+                    li.style.padding = '10px';
+                    li.style.borderBottom = '1px solid #ddd';
+                    li.style.cursor = 'pointer';
+                    li.onmouseover = () => li.style.backgroundColor = '#e0e0e0';
+                    li.onmouseout = () => li.style.backgroundColor = 'transparent';
+                    li.onclick = () => playTrack(song);
+                    list.appendChild(li);
+                });
+            });
     }
 
     // スキップ機能
@@ -132,11 +174,12 @@
         const filename = urlParams.get('file');
 
         if (!filename) {
-            alert("ファイルが見つかりません。URLにファイル名を指定してください。");
+            alert("ファイルが見つかりません。");
             return;
         }
 
-        // サーバーに数値を問い合わせる
+        // データベース(SQL/playlist.db)から数値を取得するAPIを呼び出す
+        // 注: サーバー側でこのAPIエンドポイント(/api/get_number)の実装が必要です
         fetch(`/api/get_number?file=${encodeURIComponent(filename)}`)
             .then(response => {
                 if (!response.ok) {
@@ -160,6 +203,13 @@
 <!-- ボタンを押したら数値を提示 -->
 <div class ="button-container">
     <button class="my-button" onclick="showAssociatedNumber()">紐付けられた数値を表示</button>
+</div>
+
+<!-- プレイリスト曲一覧エリア -->
+<div class="player-container" id="playlistContainer" style="margin-top: 20px; display: none;">
+    <h4>Playlist Songs</h4>
+    <ul id="playlistSongs" style="list-style: none; padding: 0; text-align: left;">
+    </ul>
 </div>
 
 <!-- アップロードフォーム -->

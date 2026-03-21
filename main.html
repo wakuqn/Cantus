@@ -18,45 +18,133 @@
     </div>
 
     <div class="container">
-        <h2>Saved Files</h2>
+        <!-- プレイリスト作成エリア -->
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
+            <h3>Create New Playlist</h3>
+            <input type="text" id="new-playlist-name" placeholder="Playlist Name">
+            <button onclick="createPlaylist()">Create</button>
+        </div>
+
+        <!-- プレイリスト選択 -->
+        <h3>Select Playlist</h3>
+        <select id="playlist-select" onchange="loadFiles()">
+            <option value="all">All Songs</option>
+            <!-- ここにプレイリストが追加されます -->
+        </select>
+
+        <h2 id="list-title">All Songs</h2>
         <ul id="file-list">
             <!-- データベースから読み込んだファイル名がここに表示されます -->
         </ul>
     </div>
 
     <script>
+        let currentPlaylistId = 'all';
+        let availablePlaylists = [];
+
         // ページの読み込みが完了したら実行
         document.addEventListener('DOMContentLoaded', function() {
-            // サーバーにファイル名の一覧を問い合わせる
-            fetch('/api/playlists')
+            loadPlaylists();
+            loadFiles();
+        });
+
+        function loadPlaylists() {
+            fetch('/api/get_playlists')
+                .then(response => response.json())
+                .then(playlists => {
+                    availablePlaylists = playlists;
+                    const select = document.getElementById('playlist-select');
+                    // 既存のオプション（All Songs以外）をクリア
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+                    playlists.forEach(pl => {
+                        const option = document.createElement('option');
+                        option.value = pl.id;
+                        option.textContent = pl.name;
+                        select.appendChild(option);
+                    });
+                });
+        }
+
+        function loadFiles() {
+            const select = document.getElementById('playlist-select');
+            currentPlaylistId = select.value;
+            const listTitle = document.getElementById('list-title');
+            listTitle.textContent = select.options[select.selectedIndex].text;
+
+            let url = '/api/playlists'; // デフォルトは全曲
+            if (currentPlaylistId !== 'all') {
+                url = `/api/get_playlist_songs?id=${currentPlaylistId}`;
+            }
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = ''; // リストをクリア
+
                     data.forEach(filename => {
                         const li = document.createElement('li');
+                        
+                        // 曲名リンク
                         const a = document.createElement('a');
                         a.textContent = filename;
-                        // ファイル名をURLパラメータとして渡すリンクを作成
                         a.href = `/playlist/test_playLiSt.html?file=${encodeURIComponent(filename)}`;
                         li.appendChild(a);
+
+                        // プレイリストへの追加ボタン（All Songs表示時のみ）
+                        if (currentPlaylistId === 'all') {
+                            const addBtn = document.createElement('button');
+                            addBtn.textContent = '+';
+                            addBtn.style.marginLeft = '10px';
+                            addBtn.onclick = () => addToPlaylistPrompt(filename);
+                            li.appendChild(addBtn);
+                        }
+
                         fileList.appendChild(li);
                     });
-
-                    // ランダム再生ボタンの設定
-                    const randomBtn = document.getElementById('random-play-btn');
-                    if (data.length > 0) {
-                        // リストの中からランダムに1つ選ぶ
-                        const randomFile = data[Math.floor(Math.random() * data.length)];
-                        // 選んだファイルのリンクをボタンに設定
-                        randomBtn.href = `/playlist/test_playLiSt.html?file=${encodeURIComponent(randomFile)}`;
-                    } else {
-                        // データがない場合はボタンを隠すなどの処理（今回はテキスト変更）
-                        randomBtn.textContent = "No Files Available";
-                        randomBtn.style.backgroundColor = "#ccc";
-                    }
                 })
                 .catch(error => console.error('Error fetching files:', error));
-        });
+        }
+
+        function createPlaylist() {
+            const nameInput = document.getElementById('new-playlist-name');
+            const name = nameInput.value;
+            if (!name) return;
+
+            fetch('/api/create_playlist', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name})
+            })
+            .then(res => res.json())
+            .then(data => {
+                // 作成成功したら、そのプレイリスト画面(プレイヤー画面)へ移動
+                window.location.href = `/playlist/test_playLiSt.html?playlist_id=${data.id}&playlist_name=${encodeURIComponent(data.name)}`;
+            });
+        }
+
+        function addToPlaylistPrompt(filename) {
+            if (availablePlaylists.length === 0) {
+                alert("No playlists available. Create one first.");
+                return;
+            }
+
+            let msg = "Enter Playlist ID to add to:\n";
+            availablePlaylists.forEach(pl => msg += `${pl.id}: ${pl.name}\n`);
+            
+            const playlistId = prompt(msg);
+             if (playlistId) {
+                fetch('/api/add_to_playlist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({playlist_id: playlistId, filename: filename})
+                })
+                .then(res => res.json())
+                .then(() => alert('Added to playlist!'));
+            }
+        }
     </script>
 </body>
 </html>
