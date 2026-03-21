@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cantus Login</title>     
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Login to Cantus</h1>
+        <div class="button-container" style="flex-direction: column; gap: 10px;">
+            <!-- GitHub Login -->
+            <a href="/api/auth/github" class="my-button" style="background-color: #333; color: white; text-decoration: none;">
+                Login with GitHub
+            </a>
+            
+            <!-- Google Login -->
+            <a href="/api/auth/google" class="my-button" style="background-color: #db4437; color: white; text-decoration: none;">
+                Login with Google
+            </a>
+        </div>
+        <p style="margin-top: 20px;">
+            <a href="/main.html">Skip Login (Guest Mode)</a>
+        </p>
+    </div>
+    
+    <style>
+        body { text-align: center; padding-top: 50px; }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</body>

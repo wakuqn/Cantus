@@ -5,10 +5,27 @@ import sqlite3
 import os
 from urllib.parse import urlparse, parse_qs, quote
 import random
+import urllib.request
+import urllib.error
+import uuid
 
 PORT = 8000
 # list.pyが書き込むデータベースファイルを指定
 DB_PATH = 'SQL/playlist.db'
+
+# --- OAuth設定 (ここに取得したIDとSecretを入力してください) ---
+OAUTH_CONFIG = {
+    'github': {
+        'client_id': 'YOUR_GITHUB_CLIENT_ID',
+        'client_secret': 'YOUR_GITHUB_CLIENT_SECRET',
+        'redirect_uri': 'http://localhost:8000/callback/github'
+    },
+    'google': {
+        'client_id': 'YOUR_GOOGLE_CLIENT_ID',
+        'client_secret': 'YOUR_GOOGLE_CLIENT_SECRET',
+        'redirect_uri': 'http://localhost:8000/callback/google'
+    }
+}
 
 # データベースの初期化（テーブル作成）
 def init_db():
@@ -21,6 +38,10 @@ def init_db():
     cursor.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)')
     # プレイリスト内の曲を管理するテーブル
     cursor.execute('CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, filename TEXT)')
+    # ユーザー管理テーブル
+    cursor.execute('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT, provider_user_id TEXT, name TEXT)')
+    # セッション管理テーブル
+    cursor.execute('CREATE TABLE IF NOT EXISTS sessions (session_id TEXT PRIMARY KEY, user_id INTEGER)')
     conn.commit()
     conn.close()
 
@@ -40,6 +61,14 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_api_get_playlists()
         elif path == '/api/get_playlist_songs':
             self.handle_api_get_playlist_songs(parsed_url.query)
+        elif path == '/api/auth/github':
+            self.auth_redirect_github()
+        elif path == '/callback/github':
+            self.auth_callback_github(parsed_url.query)
+        elif path == '/api/auth/google':
+            self.auth_redirect_google()
+        elif path == '/callback/google':
+            self.auth_callback_google(parsed_url.query)
         else:
             # 上記以外の場合は、通常のファイルを探して返す
             super().do_GET()
@@ -229,6 +258,131 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
         self.wfile.write(json.dumps(data).encode('utf-8'))
+
+    # --- OAuth Logic ---
+
+    def auth_redirect_github(self):
+        """GitHubのログイン画面へリダイレクト"""
+        client_id = OAUTH_CONFIG['github']['client_id']
+        url = f"https://github.com/login/oauth/authorize?client_id={client_id}&scope=read:user"
+        self.send_response(302)
+        self.send_header('Location', url)
+        self.end_headers()
+
+    def auth_callback_github(self, query):
+        """GitHubからのコールバック処理"""
+        query_components = parse_qs(query)
+        code = query_components.get("code", [None])[0]
+        if not code:
+            self.send_error(400, "Auth code missing")
+            return
+
+        # アクセストークンの取得
+        data = urllib.parse.urlencode({
+            'client_id': OAUTH_CONFIG['github']['client_id'],
+            'client_secret': OAUTH_CONFIG['github']['client_secret'],
+            'code': code
+        }).encode()
+        
+        req = urllib.request.Request("https://github.com/login/oauth/access_token", data=data, headers={'Accept': 'application/json'})
+        try:
+            with urllib.request.urlopen(req) as res:
+                token_data = json.loads(res.read())
+                access_token = token_data.get('access_token')
+            
+            if not access_token:
+                raise Exception("Failed to get access token")
+
+            # ユーザー情報の取得
+            req_user = urllib.request.Request("https://api.github.com/user", headers={
+                'Authorization': f'token {access_token}',
+                'Accept': 'application/json'
+            })
+            with urllib.request.urlopen(req_user) as res_user:
+                user_info = json.loads(res_user.read())
+                
+            self.create_session_and_redirect( 'github', str(user_info['id']), user_info.get('login', 'Unknown'))
+
+        except Exception as e:
+            self.send_error(500, f"GitHub Auth Error: {e}")
+
+    def auth_redirect_google(self):
+        """Googleのログイン画面へリダイレクト"""
+        params = {
+            'client_id': OAUTH_CONFIG['google']['client_id'],
+            'redirect_uri': OAUTH_CONFIG['google']['redirect_uri'],
+            'response_type': 'code',
+            'scope': 'https://www.googleapis.com/auth/userinfo.profile',
+            'access_type': 'offline'
+        }
+        url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(params)
+        self.send_response(302)
+        self.send_header('Location', url)
+        self.end_headers()
+
+    def auth_callback_google(self, query):
+        """Googleからのコールバック処理"""
+        query_components = parse_qs(query)
+        code = query_components.get("code", [None])[0]
+        if not code:
+            self.send_error(400, "Auth code missing")
+            return
+
+        # アクセストークンの取得
+        data = urllib.parse.urlencode({
+            'client_id': OAUTH_CONFIG['google']['client_id'],
+            'client_secret': OAUTH_CONFIG['google']['client_secret'],
+            'code': code,
+            'grant_type': 'authorization_code',
+            'redirect_uri': OAUTH_CONFIG['google']['redirect_uri']
+        }).encode()
+
+        try:
+            req = urllib.request.Request("https://oauth2.googleapis.com/token", data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
+            with urllib.request.urlopen(req) as res:
+                token_data = json.loads(res.read())
+                access_token = token_data.get('access_token')
+
+            # ユーザー情報の取得
+            req_user = urllib.request.Request("https://www.googleapis.com/oauth2/v1/userinfo", headers={
+                'Authorization': f'Bearer {access_token}'
+            })
+            with urllib.request.urlopen(req_user) as res_user:
+                user_info = json.loads(res_user.read())
+
+            self.create_session_and_redirect('google', user_info['id'], user_info.get('name', 'Unknown'))
+
+        except Exception as e:
+            self.send_error(500, f"Google Auth Error: {e}")
+
+    def create_session_and_redirect(self, provider, provider_user_id, name):
+        """ユーザーを保存/検索し、セッションを作成してメイン画面へ"""
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # ユーザーが存在するか確認
+        cursor.execute('SELECT id FROM users WHERE provider = ? AND provider_user_id = ?', (provider, provider_user_id))
+        row = cursor.fetchone()
+
+        if row:
+            user_id = row[0]
+        else:
+            # 新規ユーザー登録
+            cursor.execute('INSERT INTO users (provider, provider_user_id, name) VALUES (?, ?, ?)', (provider, provider_user_id, name))
+            user_id = cursor.lastrowid
+            conn.commit()
+
+        # セッションID生成
+        session_id = str(uuid.uuid4())
+        cursor.execute('INSERT INTO sessions (session_id, user_id) VALUES (?, ?)', (session_id, user_id))
+        conn.commit()
+        conn.close()
+
+        # クッキーをセットしてリダイレクト
+        self.send_response(303)
+        self.send_header('Location', '/main.html')
+        self.send_header('Set-Cookie', f'session_id={session_id}; Path=/; HttpOnly')
+        self.end_headers()
 
 if __name__ == '__main__':
     init_db() # 起動時にテーブル作成
