@@ -120,6 +120,12 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             if fileitem.filename:
                 # ファイル名を安全に取得 (パスを除去)
                 filename = os.path.basename(fileitem.filename)
+                
+                # mp3ファイルのみを許可する
+                if not filename.lower().endswith('.mp3'):
+                    print(f"[Upload] Skipped non-mp3 file: {filename}")
+                    continue
+
                 save_path = os.path.join('music', filename)
                 
                 # ファイルを保存
@@ -409,5 +415,5 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
 if __name__ == '__main__':
     init_db() # 起動時にテーブル作成
     with socketserver.TCPServer(("", PORT), MyHttpRequestHandler) as httpd:
-        print(f"サーバーを起動しました: http://localhost:{PORT}/main.html")
+        print(f"サーバーを起動しました: http://localhost:{PORT}/login.html")
         httpd.serve_forever()
