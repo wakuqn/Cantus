@@ -35,7 +35,11 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     # プレイリスト一覧を管理するテーブル
-    cursor.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)')
+    cursor.execute('CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, number TEXT)')
+    try:
+        cursor.execute('ALTER TABLE playlists ADD COLUMN number TEXT')
+    except sqlite3.OperationalError:
+        pass
     # プレイリスト内の曲を管理するテーブル
     cursor.execute('CREATE TABLE IF NOT EXISTS playlist_songs (playlist_id INTEGER, filename TEXT)')
     # ユーザー管理テーブル
@@ -57,6 +61,8 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         if path == '/api/playlists':
             self.handle_api_playlists()
+        elif path == '/api/get_playlist_number':
+            self.handle_api_get_playlist_number(parsed_url.query)
         elif path == '/api/get_number':
             self.handle_api_get_number(parsed_url.query)
         elif path == '/api/get_playlists':
@@ -238,15 +244,33 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         name = data.get('name')
         
         if name:
+            playlist_num = f"{random.randint(0, 99999999):08d}"
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
-            cursor.execute('INSERT INTO playlists (name) VALUES (?)', (name,))
+            cursor.execute('INSERT INTO playlists (name, number) VALUES (?, ?)', (name, playlist_num))
             conn.commit()
             new_id = cursor.lastrowid
             conn.close()
-            self.send_json_response({'status': 'success', 'id': new_id, 'name': name})
+            self.send_json_response({'status': 'success', 'id': new_id, 'name': name, 'number': playlist_num})
         else:
             self.send_error(400, "Missing name")
+
+    def handle_api_get_playlist_number(self, query):
+        """プレイリストIDに紐づいた8桁の数値を取得"""
+        query_components = parse_qs(query)
+        playlist_id = query_components.get("id", [None])[0]
+        if playlist_id:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute('SELECT number FROM playlists WHERE id = ?', (playlist_id,))
+            row = cursor.fetchone()
+            conn.close()
+            if row and row[0]:
+                self.send_json_response({'number': row[0]})
+            else:
+                self.send_error(404, "Playlist or number not found")
+        else:
+            self.send_error(400, "Missing playlist id")
 
     def handle_api_add_to_playlist(self):
         """プレイリストに曲を追加"""

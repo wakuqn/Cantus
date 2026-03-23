@@ -173,27 +173,3 @@ function formatTime(seconds) {
     const s = Math.floor(seconds % 60);
     return m + ":" + (s < 10 ? "0" + s : s);
 }
-
-function showAssociatedNumber() {
-    const filename = currentQueue[currentIndex] || new URLSearchParams(window.location.search).get('file');
-
-    if (!filename) {
-        alert("ファイルが選択されていません。");
-        return;
-    }
-
-    fetch(`/api/get_number?file=${encodeURIComponent(filename)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`数値が見つかりません (Status: ${response.status})`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            alert(`このファイルに紐付けられた数値は: ${data.number}`);
-        })
-        .catch(error => {
-            console.error('Error fetching number:', error);
-            alert("数値の取得中にエラーが発生しました。");
-        });
-}
