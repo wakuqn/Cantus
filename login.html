@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cantus Login</title>     
+    <title>Cantus Login</title>
 
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,12 +14,14 @@
         <h1>Login to Cantus</h1>
         <div class="button-container" style="flex-direction: column; gap: 10px;">
             <!-- GitHub Login -->
-            <a href="/api/auth/github" class="my-button" style="background-color: #333; color: white; text-decoration: none;">
+            <a href="/api/auth/github" class="my-button"
+                style="background-color: #333; color: white; text-decoration: none;">
                 Login with GitHub
             </a>
-            
+
             <!-- Google Login -->
-            <a href="/api/auth/google" class="my-button" style="background-color: #db4437; color: white; text-decoration: none;">
+            <a href="/api/auth/google" class="my-button"
+                style="background-color: #db4437; color: white; text-decoration: none;">
                 Login with Google
             </a>
         </div>
@@ -26,20 +29,34 @@
             <a href="/main.html">Skip Login (Guest Mode)</a>
         </p>
     </div>
-    
+
     <style>
-        body { 
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            text-align: center; 
+            text-align: center;
         }
+
         .button-container {
             display: flex;
             justify-content: center;
             align-items: center;
         }
     </style>
+    <style>
+        .bottom-right-text {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #3b3b3b;
+        }
+    </style>
+    <div class="bottom-right-text">
+        <h7>Experimental v0.12.3.5 ©2026 Cantus
+        </h7>
+    </div>
 </body>
