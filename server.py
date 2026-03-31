@@ -81,16 +81,7 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             # 上記以外の場合は、通常のファイルを探して返す
             super().do_GET()
 
-    def do_POST(self):
-        """ファイルのアップロード処理 (/upload)"""
-        if self.path == '/upload':
-            self.handle_upload()
-        elif self.path == '/api/create_playlist':
-            self.handle_api_create_playlist()
-        elif self.path == '/api/add_to_playlist':
-            self.handle_api_add_to_playlist()
-        else:
-            self.send_error(404, "Not Found")
+
 
     def handle_upload(self):
         # ファイルサイズ制限 (50MB)

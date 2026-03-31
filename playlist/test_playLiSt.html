@@ -95,6 +95,13 @@
             to Main</a>
     </div>
 
+    <!-- 次へのボタン-->
+    <div class="button-container" style="margin-top: 17px;">
+        <a href="../music/" class="my-button"
+            style="text-decoration: none; background: #007bff; color: #fff; padding: 10px 15px; border-radius: 5px; display: inline-block;">Next
+            song</a>
+    </div>
+
     <!-- テストプレイリスト -->
     <div class="button-container" style="margin-top: 15px;">
         <a href="/playlist/hide_playlist.html" class="my-button"
@@ -110,23 +117,5 @@
         <ul id="playlistSongs" style="list-style: none; padding: 0; text-align: left;">
         </ul>
     </div>
-
-    <!-- アップロードフォーム -->
-    <div class="player-container" style="margin-top: 20px; margin-bottom: 30px;">
-        <h4>Upload New Track</h4>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <input type="file" name="file" accept=".mp3" required multiple>
-            <div style="margin-top: 10px;">
-                <button type="submit"
-                    style="background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">Upload</button>
-            </div>
-        </form>
-    </div>
-    <div>
-        <script src="calc.js"> </script>
-        <button onclick="showPlaylistID()">表示</button>
-        <h7 id="playlistID"></h7>
-    </div>
-</body>
 
 </html>
