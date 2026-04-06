@@ -81,35 +81,6 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             # 上記以外の場合は、通常のファイルを探して返す
             super().do_GET()
 
-
-
-    def handle_upload(self):
-        # ファイルサイズ制限 (50MB)
-        content_length = int(self.headers.get('Content-Length', 0))
-        if content_length > 50 * 1024 * 1024:
-            self.send_response(303)
-            self.send_header('Location', '/playlist/test_playLiSt.html?error=FileTooLarge')
-            self.end_headers()
-            return
-
-        import cgi
-        form = cgi.FieldStorage(
-            fp=self.rfile,
-            headers=self.headers,
-            environ={'REQUEST_METHOD': 'POST',
-                     'CONTENT_TYPE': self.headers['Content-Type'],
-                     }
-        )
-        
-        if 'file' not in form:
-            self.send_error(400, "No file uploaded")
-            return
-            
-        fileitems = form['file']
-        # multiple属性で複数ファイルが送られた場合はリストになるので統一
-        if not isinstance(fileitems, list):
-            fileitems = [fileitems]
-
         last_filename = None
         os.makedirs('music', exist_ok=True)
         
@@ -134,13 +105,6 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
                 last_filename = filename
                 print(f"[Upload] Saved: {filename}")
 
-        if last_filename:
-            self.send_response(303)
-            # 最後にアップロードされた曲のプレイヤー画面へリダイレクト
-            self.send_header('Location', f'/playlist/test_playLiSt.html?file={quote(last_filename)}')
-            self.end_headers()
-        else:
-            self.send_error(400, "Invalid file")
 
     def register_to_db(self, filename):
         """データベースにファイルとランダムな数値を登録"""
