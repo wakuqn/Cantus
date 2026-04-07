@@ -144,6 +144,28 @@ audio.addEventListener('ended', () => {
     }
 });
 
+// 次の曲へ
+function nextTrack() {
+    if (currentIndex >= 0 && currentIndex < currentQueue.length - 1) {
+        currentIndex++;
+        playTrack(currentQueue[currentIndex], true);
+    } else if (currentQueue.length > 0) {
+        currentIndex = 0;
+        playTrack(currentQueue[currentIndex], true);
+    }
+}
+
+// 前の曲へ
+function prevTrack() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        playTrack(currentQueue[currentIndex], true);
+    } else if (currentQueue.length > 0) {
+        currentIndex = currentQueue.length - 1;
+        playTrack(currentQueue[currentIndex], true);
+    }
+}
+
 // スキップ機能
 function skip(time) {
     audio.currentTime += time;
