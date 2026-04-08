@@ -160,15 +160,27 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(500, f"Server error: {e}")
 
     def handle_api_playlists(self):
-        """データベースからファイル名一覧を取得し、JSON形式で返す"""
+        """musicフォルダからファイル名一覧を取得し、JSON形式で返す"""
         try:
+            music_dir = 'music'
+            filenames = []
+            if os.path.exists(music_dir):
+                for f in os.listdir(music_dir):
+                    if f.lower().endswith('.mp3'):
+                        filenames.append(f)
+            
+            filenames.sort()
+
+            # 新しく追加されたファイルをnumbersテーブルに自動登録
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
-            cursor.execute('SELECT filename FROM numbers WHERE filename IS NOT NULL ORDER BY id')
-            rows = cursor.fetchall()
+            for filename in filenames:
+                cursor.execute('SELECT id FROM numbers WHERE filename = ?', (filename,))
+                if not cursor.fetchone():
+                    rand_num = random.randint(0, 99999999)
+                    cursor.execute('INSERT INTO numbers (filename, integer_val) VALUES (?, ?)', (filename, rand_num))
+            conn.commit()
             conn.close()
-
-            filenames = [row[0] for row in rows]
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
