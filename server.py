@@ -81,29 +81,36 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
             # 上記以外の場合は、通常のファイルを探して返す
             super().do_GET()
 
-        last_filename = None
-        os.makedirs('music', exist_ok=True)
-        
-        for fileitem in fileitems:
-            if fileitem.filename:
-                # ファイル名を安全に取得 (パスを除去)
-                filename = os.path.basename(fileitem.filename)
-                
-                # mp3ファイルのみを許可する
-                if not filename.lower().endswith('.mp3'):
-                    print(f"[Upload] Skipped non-mp3 file: {filename}")
-                    continue
+    def do_POST(self):
+        """
+        POSTリクエストを処理するルーティング
+        """
+        parsed_url = urlparse(self.path)
+        path = parsed_url.path
 
-                save_path = os.path.join('music', filename)
-                
-                # ファイルを保存
-                with open(save_path, 'wb') as f:
-                    f.write(fileitem.file.read())
+        if path == '/api/create_playlist':
+            self.handle_api_create_playlist()
+        elif path == '/api/add_to_playlist':
+            self.handle_api_add_to_playlist()
+        else:
+            self.send_error(501, f"Unsupported method ('POST') for {path}")
 
-                # データベースに登録
-                self.register_to_db(filename)
-                last_filename = filename
-                print(f"[Upload] Saved: {filename}")
+        # [Note] 以前のアップロード処理の残骸 (cgi.FieldStorageが必要ですが未実装のため一旦コメントアウト)
+        # last_filename = None
+        # os.makedirs('music', exist_ok=True)
+        # 
+        # for fileitem in fileitems:
+        #     if fileitem.filename:
+        #         filename = os.path.basename(fileitem.filename)
+        #         if not filename.lower().endswith('.mp3'):
+        #             print(f"[Upload] Skipped non-mp3 file: {filename}")
+        #             continue
+        #         save_path = os.path.join('music', filename)
+        #         with open(save_path, 'wb') as f:
+        #             f.write(fileitem.file.read())
+        #         self.register_to_db(filename)
+        #         last_filename = filename
+        #         print(f"[Upload] Saved: {filename}")
 
 
     def register_to_db(self, filename):

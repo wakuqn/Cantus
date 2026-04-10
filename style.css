@@ -1,5 +1,6 @@
 .my-button {
-  background-color: #4CAF50; /* Green */
+  background-color: #4CAF50;
+  /* Green */
   border: none;
   color: white;
   padding: 15px 32px;
@@ -9,36 +10,43 @@
   font-size: 16px;
   margin: 4px 2px;
   cursor: pointer;
-}                           
+}
 
 .my-button:hover {
-  background-color: #45a049; /* Darker green */
-}           
+  background-color: #45a049;
+  /* Darker green */
+}
 
 .my-button:active {
-  background-color: #3e8e41; /* Even darker green */
+  background-color: #3e8e41;
+  /* Even darker green */
   box-shadow: 0 5px #666;
   transform: translateY(4px);
-}   
+}
 
 .my-button:disabled {
-  background-color: #cccccc; /* Gray */
-  color: #666666; /* Dark gray */
+  background-color: #cccccc;
+  /* Gray */
+  color: #666666;
+  /* Dark gray */
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .my-button:disabled:hover {
-  background-color: #cccccc; /* Gray */
-  color: #666666; /* Dark gray */
+  background-color: #cccccc;
+  /* Gray */
+  color: #666666;
+  /* Dark gray */
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .my-button:disabled:active {
-  background-color: #b1b1b1; /* Gray */
-  color: #666666; /* Dark gray */
+  background-color: #b1b1b1;
+  /* Gray */
+  color: #666666;
+  /* Dark gray */
   cursor: not-allowed;
   opacity: 0.6;
 }
-

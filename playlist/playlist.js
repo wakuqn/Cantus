@@ -60,11 +60,11 @@ function setupQueue(songs, targetFilename) {
         const li = document.createElement('li');
         li.textContent = song;
         li.style.padding = '10px';
-        li.style.borderBottom = '1px solid #ddd';
+        li.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
         li.style.cursor = 'pointer';
         li.id = 'queue-item-' + index;
 
-        li.onmouseover = () => { if (currentIndex !== index) li.style.backgroundColor = '#e0e0e0'; };
+        li.onmouseover = () => { if (currentIndex !== index) li.style.backgroundColor = 'rgba(255,255,255,0.1)'; };
         li.onmouseout = () => { if (currentIndex !== index) li.style.backgroundColor = 'transparent'; };
 
         li.onclick = () => {
@@ -94,10 +94,10 @@ function setupQueue(songs, targetFilename) {
 function togglePlay() {
     if (audio.paused) {
         audio.play();
-        playBtn.textContent = '一時停止';
+        playBtn.textContent = '⏸';
     } else {
         audio.pause();
-        playBtn.textContent = '再生';
+        playBtn.textContent = '▶';
     }
 }
 
@@ -105,7 +105,7 @@ function togglePlay() {
 function stopAudio() {
     audio.pause();
     audio.currentTime = 0;
-    playBtn.textContent = '再生';
+    playBtn.textContent = '▶';
 }
 
 // 指定した曲を再生する関数
@@ -118,17 +118,19 @@ function playTrack(filename, autoPlay = true) {
 
     if (autoPlay) {
         audio.play().catch(e => console.log("Playback prevented:", e));
-        playBtn.textContent = '一時停止';
+        playBtn.textContent = '⏸';
     }
 
     // キューのハイライト更新
     const listItems = document.getElementById('playlistSongs').querySelectorAll('li');
     listItems.forEach((li, idx) => {
         if (idx === currentIndex) {
-            li.style.backgroundColor = '#d0e8ff';
+            li.style.backgroundColor = 'rgba(30, 215, 96, 0.2)';
+            li.style.color = '#1ed760';
             li.style.fontWeight = 'bold';
         } else {
             li.style.backgroundColor = 'transparent';
+            li.style.color = 'inherit';
             li.style.fontWeight = 'normal';
         }
     });

@@ -4,58 +4,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cantus test mode</title>
+    <title>Cantus - ダッシュボード</title>
 
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Meiryo, system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
 
+        .dashboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header-section h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .header-section p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #4CAF50;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+            font-size: 1.4em;
+        }
+
+        /* Forms & Inputs */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .styled-input, .styled-select {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            flex-grow: 1;
+            transition: border-color 0.3s;
+        }
+
+        .styled-input:focus, .styled-select:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .btn-create, .btn-add {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-create:hover, .btn-add:hover {
+            background-color: #45a049;
+        }
+
+        .btn-add {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        /* Song List */
+        .song-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .song-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .song-item:last-child {
+            border-bottom: none;
+        }
+
+        .song-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .song-link {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            flex-grow: 1;
+            display: block;
+            font-size: 1.1em;
+        }
+
+        .song-link:hover {
+            color: #4CAF50;
+        }
+
+        .playlist-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        
+        .playlist-info-item {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background-color: #e0e0e0;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background-color: #ccc;
+        }
+
+    </style>
 </head>
 
 <body>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
-
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-    </style>
-
-    <div class="container">
-        <h1>Cantus</h1>
-        <p>This is a test mode for Cantus, a music composition software.</p>
-    </div>
-    <div class="button-container">
-        <a href="/playlist/test_playLiSt.html" class="my-button">Play</a>
-    </div>
-
-    <div class="container">
-        <!-- プレイリスト作成エリア -->
-        <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-            <h3>Create New Playlist</h3>
-            <input type="text" id="new-playlist-name" placeholder="Playlist Name">
-            <button onclick="createPlaylist()">Create</button>
+    <div class="dashboard-container">
+        
+        <div class="header-section">
+            <h1>🎵 Cantus Dashboard</h1>
+            <p>音楽とプレイリストを簡単に管理・再生できます</p>
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <a href="/login.html" class="my-button" style="background-color: #607d8b;">← ログアウト (戻る)</a>
+                <a href="/playlist/test_playLiSt.html" class="my-button">▶ プレイヤーを開く</a>
+            </div>
         </div>
 
-        <!-- プレイリスト選択 -->
-        <h3>Select Playlist</h3>
-        <select id="playlist-select" onchange="loadFiles()">
-            <option value="all">All Songs</option>
-            <!-- ここにプレイリストが追加されます -->
-        </select>
+        <!-- プレイリスト管理エリア -->
+        <div class="card">
+            <h3>📁 プレイリスト管理</h3>
+            
+            <div class="playlist-info">
+                <div class="playlist-info-item">
+                    <label for="playlist-select" style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">プレイリストを選択:</label>
+                    <select id="playlist-select" onchange="loadFiles()" class="styled-select" style="width: 100%;">
+                        <option value="all">すべての曲 (All Songs)</option>
+                        <!-- ここにプレイリストが追加されます -->
+                    </select>
+                </div>
+                
+                <div class="playlist-info-item">
+                    <label for="new-playlist-name" style="display: block; margin-bottom: 8px; font-weight: bold; color: #555;">新規作成:</label>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <input type="text" id="new-playlist-name" class="styled-input" placeholder="新しいプレイリスト名">
+                        <button onclick="createPlaylist()" class="btn-create">作成</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <h2 id="list-title">All Songs</h2>
-        <ul id="file-list">
-            <!-- データベースから読み込んだファイル名がここに表示されます -->
-        </ul>
+        <!-- 曲リストエリア -->
+        <div class="card">
+            <h3 id="list-title">🎶 すべての曲</h3>
+            <ul id="file-list" class="song-list">
+                <!-- データベースから読み込んだファイル名がここに表示されます -->
+            </ul>
+        </div>
+        
+    </div>
+
+    <!-- プレイリスト追加モーダル -->
+    <div id="add-to-playlist-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:#4CAF50;">プレイリストに追加</h3>
+            <p id="modal-filename" style="word-break: break-all; color:#555; margin-bottom: 15px; font-weight: bold;"></p>
+            <label for="modal-playlist-select" style="display:block; margin-bottom:5px; font-weight:bold; color:#555;">追加先プレイリストを選択:</label>
+            <select id="modal-playlist-select" class="styled-select" style="width:100%;"></select>
+            <div class="modal-buttons">
+                <button onclick="closeModal()" class="btn-cancel">キャンセル</button>
+                <button onclick="confirmAddToPlaylist()" class="btn-create">追加</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -91,7 +286,7 @@
             const select = document.getElementById('playlist-select');
             currentPlaylistId = select.value;
             const listTitle = document.getElementById('list-title');
-            listTitle.textContent = select.options[select.selectedIndex].text;
+            listTitle.textContent = "🎶 " + select.options[select.selectedIndex].text;
 
             let url = '/api/playlists'; // デフォルトは全曲
             if (currentPlaylistId !== 'all') {
@@ -104,11 +299,18 @@
                     const fileList = document.getElementById('file-list');
                     fileList.innerHTML = ''; // リストをクリア
 
+                    if(data.length === 0) {
+                        fileList.innerHTML = '<li class="song-item" style="color:#999; justify-content:center;">曲がありません。</li>';
+                        return;
+                    }
+
                     data.forEach(filename => {
                         const li = document.createElement('li');
+                        li.className = 'song-item';
 
                         // 曲名リンク
                         const a = document.createElement('a');
+                        a.className = 'song-link';
                         a.textContent = filename;
                         a.href = `/playlist/test_playLiSt.html?file=${encodeURIComponent(filename)}`;
                         li.appendChild(a);
@@ -116,8 +318,8 @@
                         // プレイリストへの追加ボタン（All Songs表示時のみ）
                         if (currentPlaylistId === 'all') {
                             const addBtn = document.createElement('button');
-                            addBtn.textContent = '+';
-                            addBtn.style.marginLeft = '10px';
+                            addBtn.className = 'btn-add';
+                            addBtn.textContent = '＋ 追加';
                             addBtn.onclick = () => addToPlaylistPrompt(filename);
                             li.appendChild(addBtn);
                         }
@@ -145,24 +347,50 @@
                 });
         }
 
+        let currentAddingFile = '';
+
         function addToPlaylistPrompt(filename) {
             if (availablePlaylists.length === 0) {
-                alert("No playlists available. Create one first.");
+                alert("プレイリストがありません。先に新しく作成してください。");
                 return;
             }
 
-            let msg = "Enter Playlist ID to add to:\n";
-            availablePlaylists.forEach(pl => msg += `${pl.id}: ${pl.name}\n`);
+            currentAddingFile = filename;
+            document.getElementById('modal-filename').textContent = "曲名: " + filename;
 
-            const playlistId = prompt(msg);
-            if (playlistId) {
+            const modalSelect = document.getElementById('modal-playlist-select');
+            modalSelect.innerHTML = ''; // クリア
+            availablePlaylists.forEach(pl => {
+                const option = document.createElement('option');
+                option.value = pl.id;
+                option.textContent = pl.name;
+                modalSelect.appendChild(option);
+            });
+
+            document.getElementById('add-to-playlist-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('add-to-playlist-modal').style.display = 'none';
+            currentAddingFile = '';
+        }
+
+        function confirmAddToPlaylist() {
+            const playlistId = document.getElementById('modal-playlist-select').value;
+            if (playlistId && currentAddingFile) {
                 fetch('/api/add_to_playlist', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ playlist_id: playlistId, filename: filename })
+                    body: JSON.stringify({ playlist_id: playlistId, filename: currentAddingFile })
                 })
-                    .then(res => res.json())
-                    .then(() => alert('Added to playlist!'));
+                    .then(res => {
+                        if(res.ok){
+                            alert('プレイリストに追加しました！');
+                            closeModal();
+                        }else{
+                            alert('追加に失敗しました。再度お試しください。');
+                        }
+                    });
             }
         }
     </script>
