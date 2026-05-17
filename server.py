@@ -95,24 +95,6 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(501, f"Unsupported method ('POST') for {path}")
 
-        # [Note] 以前のアップロード処理の残骸 (cgi.FieldStorageが必要ですが未実装のため一旦コメントアウト)
-        # last_filename = None
-        # os.makedirs('music', exist_ok=True)
-        # 
-        # for fileitem in fileitems:
-        #     if fileitem.filename:
-        #         filename = os.path.basename(fileitem.filename)
-        #         if not filename.lower().endswith('.mp3'):
-        #             print(f"[Upload] Skipped non-mp3 file: {filename}")
-        #             continue
-        #         save_path = os.path.join('music', filename)
-        #         with open(save_path, 'wb') as f:
-        #             f.write(fileitem.file.read())
-        #         self.register_to_db(filename)
-        #         last_filename = filename
-        #         print(f"[Upload] Saved: {filename}")
-
-
     def register_to_db(self, filename):
         """データベースにファイルとランダムな数値を登録"""
         try:
